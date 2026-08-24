@@ -50,6 +50,13 @@ This is a pure frontend HTML tool that uses the WebUSB API in Chromium-based bro
 
 ---
 
+## 🌐 在线使用 / Online
+
+无需本地运行，直接访问：https://fallingmy.github.io/ns-web-dbibackend/  
+No local hosting needed, just visit: https://fallingmy.github.io/ns-web-dbibackend/
+
+---
+
 ## 🔧 使用方法 / Usage
 
 ### 前提条件 / Prerequisites
