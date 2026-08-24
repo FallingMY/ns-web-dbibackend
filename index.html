@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Switch DBI Backend WebUSB 传输工具 (稳定版 v9)</title>
+    <style>
+        :root {
+            --bg: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #1c2129;
+            --border: #30363d;
+            --text: #e6edf3;
+            --text-secondary: #8b949e;
+            --accent: #58a6ff;
+            --accent-hover: #79b8ff;
+            --success: #3fb950;
+            --success-bg: #1a2e1a;
+            --error: #f85149;
+            --error-bg: #2d1a1a;
+            --warning: #d29922;
+            --warning-bg: #2d2a1a;
+            --radius: 8px;
+            --font-mono: 'SF Mono', 'Menlo', 'Monaco', 'Consolas', monospace;
+            --font-sans: -apple-system, 'BlinkMacSystemFont', 'Segoe UI', sans-serif;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: var(--font-sans);
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 16px;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 900px;
+            width: 100%;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+        }
+        h1 { font-size: 1.5rem; font-weight: 700; color: var(--accent); margin-bottom: 4px; }
+        .subtitle { color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 20px; }
+        .status-bar { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--bg-tertiary); border-radius: var(--radius); margin-bottom: 20px; border: 1px solid var(--border); flex-wrap: wrap; }
+        .status-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--text-secondary); }
+        .status-dot.connected { background: var(--success); box-shadow: 0 0 8px rgba(63,185,80,0.5); animation: pulse 2s infinite; }
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .status-text { font-size: 0.875rem; font-weight: 500; }
+        .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-tertiary); color: var(--text); font-size: 0.875rem; cursor: pointer; transition: all 0.2s; user-select: none; }
+        .btn:hover { background: var(--bg-secondary); border-color: var(--accent); color: var(--accent); }
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .btn-primary { background: var(--accent); border-color: var(--accent); color: #000; font-weight: 600; }
+        .btn-primary:hover { background: var(--accent-hover); color: #000; }
+        .btn-success { background: var(--success); border-color: var(--success); color: #000; font-weight: 600; }
+        .btn-danger { border-color: var(--error); color: var(--error); }
+        .tabs { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 1px solid var(--border); }
+        .tab { padding: 8px 16px; cursor: pointer; color: var(--text-secondary); border-bottom: 2px solid transparent; background: none; border: none; font-family: var(--font-sans); font-size: 0.875rem; }
+        .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .file-drop-zone { border: 2px dashed var(--border); border-radius: var(--radius); padding: 32px 20px; text-align: center; cursor: pointer; margin-bottom: 16px; background: var(--bg-tertiary); }
+        .file-drop-zone.dragover { border-color: var(--accent); background: #1a2a3a; }
+        .file-list { list-style: none; margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+        .file-item { display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: var(--bg-tertiary); border-radius: var(--radius); font-size: 0.875rem; }
+        .progress-container { margin-top: 12px; display: none; }
+        .progress-container.active { display: block; }
+        .progress-bar-track { width: 100%; height: 8px; background: var(--bg-tertiary); border-radius: 4px; overflow: hidden; }
+        .progress-bar-fill { height: 100%; background: repeating-linear-gradient(45deg, var(--accent) 0, var(--accent) 10px, #1a6bc4 10px, #1a6bc4 20px); background-size: 28px 100%; animation: slide 1s linear infinite; }
+        .progress-bar-fill.complete { background: var(--success); animation: none; }
+        @keyframes slide { 0% { background-position: 0 0; } 100% { background-position: 28px 0; } }
+        .progress-stats { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-secondary); margin-top: 6px; flex-wrap: wrap; gap: 4px; }
+        .file-overall-progress { font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px; }
+        .log-area { margin-top: 16px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; font-family: var(--font-mono); font-size: 0.75rem; max-height: 250px; overflow-y: auto; white-space: pre-wrap; }
+        .notice { padding: 10px 14px; border-radius: var(--radius); font-size: 0.8125rem; margin-bottom: 12px; display: flex; gap: 8px; border: 1px solid; }
+        .notice-info { background: #1a2a3a; border-color: var(--accent); color: var(--accent); }
+        .notice-warning { background: #2d2a1a; border-color: var(--warning); color: var(--warning); }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔗 Switch DBI Backend WebUSB 工具</h1>
+        <p class="subtitle">稳定版 v9 · 文件计量恢复 · 速率修正 · 消除分片完成误报</p>
+
+        <div class="status-bar">
+            <span class="status-dot" id="statusDot"></span>
+            <span class="status-text" id="statusText">未连接</span>
+            <span style="flex:1;"></span>
+            <button class="btn btn-primary" id="btnConnect" onclick="connectUSB()">连接 Switch</button>
+            <button class="btn" id="btnDisconnect" onclick="disconnectUSB()" disabled>断开</button>
+            <button class="btn btn-success" id="btnStartServer" onclick="startServer()" disabled>▶ 启动服务</button>
+        </div>
+
+        <div class="notice notice-info">
+            <span>ℹ️</span>
+            <div>需要 Chrome/Edge，HTTPS 或 localhost。Switch 上启动 DBI 并选择「后端」。</div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" data-tab="transfer" onclick="switchTab('transfer')">📦 文件传输</button>
+            <button class="tab" data-tab="log" onclick="switchTab('log')">📋 日志</button>
+        </div>
+
+        <div class="tab-content active" id="tab-transfer">
+            <div class="file-drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+                <div>📁 点击或拖放文件</div>
+                <p style="color:var(--text-secondary);font-size:0.875rem;">支持 .nsp .xci .nsz</p>
+                <input type="file" id="fileInput" multiple accept=".nsp,.xci,.nsz" style="display:none;" onchange="handleFileSelect(event)">
+            </div>
+            <ul class="file-list" id="fileList"></ul>
+            <div class="progress-container" id="progressContainer">
+                <div class="progress-bar-track"><div class="progress-bar-fill" id="progressFill"></div></div>
+                <div class="progress-stats">
+                    <span id="progressLabel">文件覆盖：0.0% (0 B / 0 B)</span>
+                    <span id="progressSpeed">0 MB/s</span>
+                    <span id="progressEta">剩余: --</span>
+                </div>
+                <div class="file-overall-progress" id="fileOverallProgress"></div>
+            </div>
+            <div style="margin-top:12px;">
+                <button class="btn btn-danger" onclick="clearFileList()">🗑️ 清空列表</button>
+            </div>
+        </div>
+
+        <div class="tab-content" id="tab-log">
+            <div style="margin-bottom:8px;">
+                <button class="btn" onclick="clearLog()">🗑️ 清空日志</button>
+                <button class="btn" onclick="exportLog()">📥 导出日志</button>
+            </div>
+            <div class="log-area" id="logArea"></div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================
+        //  协议常量
+        // ============================================================
+        const USB_VID = 0x057E;
+        const USB_PID = 0x3000;
+        const CMD_TYPE_REQUEST = 0;
+        const CMD_TYPE_RESPONSE = 1;
+        const CMD_TYPE_ACK = 2;
+        const CMD_ID_EXIT = 0;
+        const CMD_ID_FILE_RANGE = 2;
+        const CMD_ID_LIST = 3;
+        const BUFFER_SEGMENT_DATA_SIZE = 1024 * 1024; // 1MB，匹配 DBI 分片大小
+        const MAX_FILE_SIZE = 256 * 1024 * 1024 * 1024;
+        const HEARTBEAT_TIMEOUT = 30000;
+        const TRANSFER_TIMEOUT = 15000;
+        const EMA_ALPHA = 0.2; // 速率平滑系数
+
+        // ============================================================
+        //  全局状态
+        // ============================================================
+        let usbDevice = null;
+        let bulkOutEndpointNumber = null;
+        let bulkInEndpointNumber = null;
+        let isConnected = false;
+        let serverRunning = false;
+        let transferCancelled = false;
+        let fileMap = new Map();
+        let currentTransferInfo = null;
+        let lastCommandTime = 0;
+
+        // 文件计量：区间合并
+        let fileCoverageMap = new Map(); // 文件名 -> [{start, end}]
+        let pendingIntervals = [];        // 待合并区间（每批）
+        let lastMergeTime = 0;
+
+        // 速率计算：滑动窗口
+        let speedSamples = [];            // [{bytes, timestamp}]
+        let smoothedSpeed = 0;            // 指数移动平均后的速率
+
+        // ============================================================
+        //  DOM 引用
+        // ============================================================
+        const statusDot = document.getElementById('statusDot');
+        const statusText = document.getElementById('statusText');
+        const btnConnect = document.getElementById('btnConnect');
+        const btnDisconnect = document.getElementById('btnDisconnect');
+        const btnStartServer = document.getElementById('btnStartServer');
+        const fileInput = document.getElementById('fileInput');
+        const fileListEl = document.getElementById('fileList');
+        const dropZone = document.getElementById('dropZone');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressFill = document.getElementById('progressFill');
+        const progressLabel = document.getElementById('progressLabel');
+        const progressSpeed = document.getElementById('progressSpeed');
+        const progressEta = document.getElementById('progressEta');
+        const fileOverallProgress = document.getElementById('fileOverallProgress');
+        const logArea = document.getElementById('logArea');
+
+        // ============================================================
+        //  工具函数
+        // ============================================================
+        function log(message, level = 'info') {
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${level}`;
+            const timestamp = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+            entry.textContent = `[${timestamp}] ${message}`;
+            logArea.appendChild(entry);
+            logArea.scrollTop = logArea.scrollHeight;
+        }
+        function clearLog() { logArea.innerHTML = ''; }
+        function exportLog() {
+            const blob = new Blob([logArea.textContent], { type: 'text/plain' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `dbi-log-${Date.now()}.txt`;
+            a.click();
+        }
+        function updateConnectionStatus(connected, message) {
+            isConnected = connected;
+            statusDot.className = connected ? 'status-dot connected' : 'status-dot';
+            statusText.textContent = message || (connected ? '已连接' : '未连接');
+            btnConnect.disabled = connected;
+            btnDisconnect.disabled = !connected;
+            btnStartServer.disabled = !connected || serverRunning;
+        }
+        function formatBytes(b) {
+            if (b === 0) return '0 B';
+            const u = ['B','KB','MB','GB','TB'];
+            const i = Math.floor(Math.log(b) / Math.log(1024));
+            return `${(b / 1024**i).toFixed(i >= 3 ? 2 : 0)} ${u[i]}`;
+        }
+        function formatSpeed(bps) { return bps > 0 ? `${(bps / 1048576).toFixed(1)} MB/s` : '0 MB/s'; }
+        function formatEta(s) {
+            if (s <= 0 || !isFinite(s)) return '--';
+            if (s < 60) return `${Math.ceil(s)} 秒`;
+            if (s < 3600) return `${Math.floor(s/60)} 分 ${Math.ceil(s%60)} 秒`;
+            return `${Math.floor(s/3600)} 时 ${Math.floor((s%3600)/60)} 分`;
+        }
+        function getFileExtension(n) { return n.toLowerCase().split('.').pop(); }
+        function escapeHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+        function switchTab(id) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === id));
+            document.querySelectorAll('.tab-content').forEach(tc => tc.classList.toggle('active', tc.id === `tab-${id}`));
+        }
+
+        // ---------- 区间合并 ----------
+        function insertAndMergeInterval(fileName, start, end) {
+            let intervals = fileCoverageMap.get(fileName);
+            if (!intervals) {
+                intervals = [];
+                fileCoverageMap.set(fileName, intervals);
+            }
+            // 二分插入
+            let low = 0, high = intervals.length;
+            while (low < high) {
+                const mid = (low + high) >> 1;
+                if (intervals[mid].start < start) low = mid + 1;
+                else high = mid;
+            }
+            intervals.splice(low, 0, { start, end });
+            // 合并重叠
+            const merged = [];
+            for (const inv of intervals) {
+                if (merged.length === 0 || inv.start > merged[merged.length-1].end) {
+                    merged.push({...inv});
+                } else {
+                    merged[merged.length-1].end = Math.max(merged[merged.length-1].end, inv.end);
+                }
+            }
+            fileCoverageMap.set(fileName, merged);
+            return merged.reduce((sum, cur) => sum + (cur.end - cur.start), 0);
+        }
+
+        function getCoveredBytes(fileName) {
+            const intervals = fileCoverageMap.get(fileName);
+            if (!intervals) return 0;
+            return intervals.reduce((sum, cur) => sum + (cur.end - cur.start), 0);
+        }
+
+        function mergePendingIntervals(fileName) {
+            if (pendingIntervals.length === 0) return;
+            for (const inv of pendingIntervals) {
+                insertAndMergeInterval(fileName, inv.start, inv.end);
+            }
+            pendingIntervals = [];
+        }
+
+        function updateOverallProgress(fileName) {
+            const file = fileMap.get(fileName);
+            if (!file) {
+                progressFill.style.width = '0%';
+                progressLabel.textContent = '文件覆盖：0.0% (0 B / 0 B)';
+                fileOverallProgress.textContent = '';
+                return;
+            }
+            const covered = getCoveredBytes(fileName);
+            const percent = file.size > 0 ? (covered / file.size) * 100 : 0;
+            progressFill.style.width = `${percent}%`;
+            progressLabel.textContent = `文件覆盖：${percent.toFixed(1)}% (${formatBytes(covered)} / ${formatBytes(file.size)})`;
+            fileOverallProgress.textContent = `已传输（去重）：${formatBytes(covered)} / ${formatBytes(file.size)}`;
+            if (covered >= file.size) {
+                progressFill.classList.add('complete');
+            } else {
+                progressFill.classList.remove('complete');
+            }
+        }
+
+        // ---------- 速率计算 ----------
+        function addSpeedSample(bytes) {
+            const now = performance.now();
+            speedSamples.push({ bytes, timestamp: now });
+            // 移除超过 2 秒的旧样本
+            while (speedSamples.length > 0 && now - speedSamples[0].timestamp > 2000) {
+                speedSamples.shift();
+            }
+            // 计算窗口内平均速率
+            if (speedSamples.length >= 2) {
+                const first = speedSamples[0];
+                const timeSpan = (now - first.timestamp) / 1000; // 秒
+                const totalBytes = speedSamples.reduce((sum, s) => sum + s.bytes, 0);
+                if (timeSpan > 0) {
+                    const instantSpeed = totalBytes / timeSpan; // B/s
+                    // 指数移动平均平滑
+                    smoothedSpeed = (smoothedSpeed * (1 - EMA_ALPHA)) + (instantSpeed * EMA_ALPHA);
+                }
+            }
+            progressSpeed.textContent = formatSpeed(smoothedSpeed);
+            // 剩余时间估算
+            if (currentTransferInfo && smoothedSpeed > 0) {
+                const covered = getCoveredBytes(currentTransferInfo.fileName);
+                const file = fileMap.get(currentTransferInfo.fileName);
+                if (file) {
+                    const remainingBytes = file.size - covered;
+                    progressEta.textContent = `剩余: ${formatEta(remainingBytes / smoothedSpeed)}`;
+                }
+            }
+        }
+
+        // ============================================================
+        //  文件选择
+        // ============================================================
+        function updateFileListUI() {
+            fileListEl.innerHTML = '';
+            if (fileMap.size === 0) {
+                fileListEl.innerHTML = '<li style="color:var(--text-secondary);list-style:none;">暂无文件</li>';
+                return;
+            }
+            for (const [name, file] of fileMap) {
+                const li = document.createElement('li');
+                li.className = 'file-item';
+                li.innerHTML = `
+                    <span>${escapeHtml(name)}</span>
+                    <span style="color:var(--text-secondary);font-size:0.75rem;">${formatBytes(file.size)}</span>
+                    <button class="btn btn-sm btn-danger" onclick="removeFile(${JSON.stringify(name)})">移除</button>
+                `;
+                fileListEl.appendChild(li);
+            }
+        }
+        function removeFile(name) {
+            if (fileMap.has(name)) {
+                fileMap.delete(name);
+                fileCoverageMap.delete(name);
+                updateFileListUI();
+                log(`已移除: ${name}`);
+            }
+        }
+        function clearFileList() {
+            if (serverRunning && !confirm('服务运行中，确定清空？')) return;
+            fileMap.clear();
+            fileCoverageMap.clear();
+            pendingIntervals = [];
+            updateFileListUI();
+            hideProgress();
+            log('文件列表已清空');
+        }
+        function isValidFileName(n) { return !/[\\/\x00-\x1F]/.test(n); }
+        function addFiles(files) {
+            for (const file of files) {
+                const ext = getFileExtension(file.name);
+                if (!['nsp','xci','nsz'].includes(ext)) { log(`不支持: ${file.name}`, 'warning'); continue; }
+                if (!isValidFileName(file.name)) { log(`非法文件名: ${file.name}`, 'warning'); continue; }
+                if (file.size > MAX_FILE_SIZE) { log(`文件过大: ${file.name}`, 'warning'); continue; }
+                fileMap.set(file.name, file);
+                log(`已添加: ${file.name} (${formatBytes(file.size)})`);
+            }
+            updateFileListUI();
+        }
+        function handleFileSelect(e) { addFiles(Array.from(e.target.files)); e.target.value = ''; }
+        dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+        dropZone.addEventListener('dragleave', e => { e.preventDefault(); dropZone.classList.remove('dragover'); });
+        dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('dragover'); addFiles(Array.from(e.dataTransfer.files)); });
+
+        function hideProgress() {
+            progressContainer.classList.remove('active');
+            progressFill.style.width = '0%';
+            progressFill.classList.remove('complete');
+            progressLabel.textContent = '文件覆盖：0.0% (0 B / 0 B)';
+            progressSpeed.textContent = '0 MB/s';
+            progressEta.textContent = '剩余: --';
+            fileOverallProgress.textContent = '';
+        }
+        function showProgress() { progressContainer.classList.add('active'); }
+
+        // ============================================================
+        //  USB 连接
+        // ============================================================
+        async function connectUSB() {
+            try {
+                const device = await navigator.usb.requestDevice({ filters: [{ vendorId: USB_VID, productId: USB_PID }] });
+                if (!device) return;
+                log(`已选择: ${device.productName || '未知'}`);
+                await device.open();
+                if (device.configuration === null) await device.selectConfiguration(1);
+                await device.claimInterface(0);
+                const eps = scanEndpoints(device);
+                bulkOutEndpointNumber = eps.out.endpointNumber;
+                bulkInEndpointNumber = eps.inp.endpointNumber;
+                log(`OUT: ${bulkOutEndpointNumber}, IN: ${bulkInEndpointNumber}`);
+                usbDevice = device;
+                updateConnectionStatus(true, `已连接: ${device.productName || 'Switch'}`);
+                log('✅ USB 连接成功');
+            } catch (err) {
+                log(`连接失败: ${err.message}`, 'error');
+                updateConnectionStatus(false, '连接失败');
+            }
+        }
+        function scanEndpoints(device) {
+            let out = null, inp = null;
+            for (const iface of device.configuration.interfaces) {
+                for (const alt of iface.alternates) {
+                    for (const ep of alt.endpoints) {
+                        if (ep.type === 'bulk') {
+                            if (ep.direction === 'out' && !out) out = { endpointNumber: ep.endpointNumber };
+                            if (ep.direction === 'in' && !inp) inp = { endpointNumber: ep.endpointNumber };
+                        }
+                    }
+                }
+            }
+            if (!out || !inp) return { out: { endpointNumber: 1 }, inp: { endpointNumber: 1 } };
+            return { out, inp };
+        }
+        function handleUSBDisconnect(event) {
+            if (usbDevice) { log('设备断开', 'error'); stopServer(); usbDevice = null; updateConnectionStatus(false, '设备已断开'); }
+        }
+        async function disconnectUSB() {
+            if (serverRunning) { if (!confirm('服务运行中，断开？')) return; stopServer(); }
+            if (usbDevice) { try { await usbDevice.close(); } catch(e) {} usbDevice = null; }
+            updateConnectionStatus(false, '已断开');
+        }
+
+        // ============================================================
+        //  服务与命令循环
+        // ============================================================
+        function startServer() {
+            if (!isConnected || !usbDevice) return;
+            if (serverRunning) return;
+            serverRunning = true;
+            transferCancelled = false;
+            lastCommandTime = performance.now();
+            smoothedSpeed = 0;
+            speedSamples = [];
+            pendingIntervals = [];
+            lastMergeTime = performance.now();
+            btnStartServer.disabled = true;
+            log('🚀 启动服务');
+            serverLoop();
+        }
+        function stopServer() {
+            serverRunning = false;
+            transferCancelled = true;
+            btnStartServer.disabled = false;
+            hideProgress();
+            log('⏹️ 服务停止');
+        }
+        async function serverLoop() {
+            while (serverRunning && usbDevice) {
+                try {
+                    if (performance.now() - lastCommandTime > HEARTBEAT_TIMEOUT) { log('心跳超时', 'error'); stopServer(); break; }
+                    const headerData = await usbDevice.transferIn(bulkInEndpointNumber, 16);
+                    if (headerData.status !== 'ok') throw new Error('transferIn 失败');
+                    lastCommandTime = performance.now();
+                    const header = new Uint8Array(headerData.data.buffer);
+                    if (header.length < 16) continue;
+                    if (new TextDecoder('ascii').decode(header.slice(0,4)) !== 'DBI0') continue;
+                    const dv = new DataView(header.buffer);
+                    const cmdType = dv.getUint32(4, true);
+                    const cmdId = dv.getUint32(8, true);
+                    const dataSize = dv.getUint32(12, true);
+                    await handleCommand(cmdType, cmdId, dataSize);
+                } catch (err) {
+                    if (serverRunning) { log(`命令循环错误: ${err.message}`, 'error'); stopServer(); }
+                    break;
+                }
+            }
+        }
+        async function handleCommand(cmdType, cmdId, dataSize) {
+            if (cmdType !== CMD_TYPE_REQUEST) return;
+            if (cmdId === CMD_ID_EXIT) {
+                await sendResponse(CMD_TYPE_RESPONSE, CMD_ID_EXIT, 0);
+                stopServer();
+            } else if (cmdId === CMD_ID_LIST) {
+                await processListCommand();
+            } else if (cmdId === CMD_ID_FILE_RANGE) {
+                await processFileRangeCommand(dataSize);
+            }
+        }
+        async function processListCommand() {
+            const names = Array.from(fileMap.keys()).join('\n');
+            const bytes = new TextEncoder().encode(names);
+            await sendResponse(CMD_TYPE_RESPONSE, CMD_ID_LIST, bytes.length);
+            try { await readAck(); } catch(e) { log(`ACK超时: ${e.message}`, 'warning'); }
+            if (bytes.length > 0) await usbDevice.transferOut(bulkOutEndpointNumber, bytes);
+        }
+        async function processFileRangeCommand(dataSize) {
+            await sendResponse(CMD_TYPE_ACK, CMD_ID_FILE_RANGE, dataSize);
+            const rangeData = await readData(dataSize);
+            if (rangeData.length < 16) return;
+            const dv = new DataView(rangeData.buffer);
+            const rangeSize = dv.getUint32(0, true);
+            const rangeOffset = Number(dv.getBigUint64(4, true));
+            const nameLen = dv.getUint32(12, true);
+            const name = new TextDecoder('utf-8').decode(rangeData.slice(16, 16 + nameLen));
+            const file = fileMap.get(name);
+            if (!file) { await sendResponse(CMD_TYPE_RESPONSE, CMD_ID_FILE_RANGE, 0); return; }
+            if (rangeOffset + rangeSize > file.size) { await sendResponse(CMD_TYPE_RESPONSE, CMD_ID_FILE_RANGE, 0); return; }
+            await sendResponse(CMD_TYPE_RESPONSE, CMD_ID_FILE_RANGE, rangeSize);
+            try { await readAck(); } catch(e) { log(`ACK超时: ${e.message}`, 'warning'); }
+
+            // 只记录较大分片（≥1MB），但分片实际都是1MB，会记录许多，可调整为≥4MB，但这里不记录分片完成
+            // 不再输出“传输块”日志，减少干扰
+
+            currentTransferInfo = { fileName: name, rangeSize, rangeOffset, file, bytesSent: 0 };
+            showProgress();
+            updateOverallProgress(name); // 初始显示
+
+            const startTime = performance.now();
+            let lastSpeedUpdate = startTime;
+
+            try {
+                let offset = rangeOffset;
+                let remaining = rangeSize;
+                let chunkSize = BUFFER_SEGMENT_DATA_SIZE; // 1MB
+                if (remaining < chunkSize) chunkSize = remaining;
+
+                // 简单的单块传输，因为分片通常等于1MB，直接一次发送
+                while (remaining > 0 && serverRunning && !transferCancelled) {
+                    const chunk = await readFileSlice(file, offset, chunkSize);
+                    await usbDevice.transferOut(bulkOutEndpointNumber, chunk);
+
+                    offset += chunkSize;
+                    remaining -= chunkSize;
+                    currentTransferInfo.bytesSent += chunkSize;
+
+                    // 将已发送块加入待合并区间
+                    pendingIntervals.push({ start: offset - chunkSize, end: offset });
+
+                    // 更新速率样本
+                    addSpeedSample(chunkSize);
+
+                    // 定期合并区间并更新进度（每500ms）
+                    const now = performance.now();
+                    if (now - lastMergeTime > 500) {
+                        mergePendingIntervals(name);
+                        updateOverallProgress(name);
+                        lastMergeTime = now;
+                    }
+
+                    // 让出事件循环（每50ms）
+                    if (now - lastSpeedUpdate > 50) {
+                        await new Promise(r => setTimeout(r, 0));
+                        lastSpeedUpdate = now;
+                    }
+
+                    if (remaining > 0) {
+                        chunkSize = Math.min(BUFFER_SEGMENT_DATA_SIZE, remaining);
+                    }
+                }
+
+                // 传输结束，确保合并所有待处理区间
+                mergePendingIntervals(name);
+                updateOverallProgress(name);
+
+                // 检查是否整个文件完成
+                const covered = getCoveredBytes(name);
+                if (covered >= file.size) {
+                    log(`✅ 文件传输完成: ${name}`);
+                    progressFill.classList.add('complete');
+                    // 完成状态将一直保持，不再回到滚动
+                } else {
+                    // 未完成，保持进度条滚动
+                }
+
+            } catch (err) {
+                log(`传输错误: ${err.message}`, 'error');
+            } finally {
+                currentTransferInfo = null;
+                // 如果服务仍在运行，保留进度条显示当前文件覆盖，但隐藏逻辑由 stopServer 或下一个分片触发
+            }
+        }
+
+        // ============================================================
+        //  USB 辅助
+        // ============================================================
+        async function transferInWithTimeout(ep, len, timeout = TRANSFER_TIMEOUT) {
+            return await Promise.race([
+                usbDevice.transferIn(ep, len),
+                new Promise((_, rej) => setTimeout(() => rej(new Error('超时')), timeout))
+            ]);
+        }
+        async function sendResponse(type, id, size) {
+            const header = new Uint8Array(16);
+            header.set(new TextEncoder().encode('DBI0'), 0);
+            const dv = new DataView(header.buffer);
+            dv.setUint32(4, type, true);
+            dv.setUint32(8, id, true);
+            dv.setUint32(12, size, true);
+            await usbDevice.transferOut(bulkOutEndpointNumber, header);
+        }
+        async function readAck() {
+            const res = await transferInWithTimeout(bulkInEndpointNumber, 16);
+            if (res.status !== 'ok') throw new Error('ACK读取失败');
+            return new Uint8Array(res.data.buffer);
+        }
+        async function readData(size) {
+            const chunks = [];
+            let total = 0;
+            while (total < size) {
+                const res = await transferInWithTimeout(bulkInEndpointNumber, size - total);
+                if (res.status !== 'ok') throw new Error('数据读取失败');
+                const data = new Uint8Array(res.data.buffer);
+                if (data.length === 0) break;
+                chunks.push(data);
+                total += data.length;
+            }
+            const combined = new Uint8Array(total);
+            let off = 0;
+            for (const c of chunks) { combined.set(c, off); off += c.length; }
+            return combined;
+        }
+        async function readFileSlice(file, start, length) {
+            const slice = file.slice(start, start + length);
+            const buffer = await slice.arrayBuffer();
+            return new Uint8Array(buffer);
+        }
+
+        // ============================================================
+        //  初始化
+        // ============================================================
+        function init() {
+            log('Switch DBI Backend WebUSB 工具 v9 已加载');
+            log('文件计量恢复，速率修正，无分片完成误报');
+            if (!('usb' in navigator)) { log('❌ 不支持 WebUSB', 'error'); btnConnect.disabled = true; return; }
+            navigator.usb.addEventListener('disconnect', handleUSBDisconnect);
+            document.addEventListener('dragover', e => e.preventDefault());
+            document.addEventListener('drop', e => e.preventDefault());
+            updateFileListUI();
+        }
+        document.addEventListener('DOMContentLoaded', init);
+        window.addEventListener('beforeunload', e => {
+            if (serverRunning) { e.preventDefault(); e.returnValue = '服务运行中'; }
+        });
+
+        window.connectUSB = connectUSB;
+        window.disconnectUSB = disconnectUSB;
+        window.startServer = startServer;
+        window.clearFileList = clearFileList;
+        window.removeFile = removeFile;
+        window.handleFileSelect = handleFileSelect;
+        window.switchTab = switchTab;
+        window.clearLog = clearLog;
+        window.exportLog = exportLog;
+    </script>
+</body>
+</html>
