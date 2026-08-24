@@ -8,6 +8,13 @@
 
 ---
 
+## 🌐 在线使用 / Online
+
+无需本地运行，直接访问：https://fallingmy.github.io/ns-web-dbibackend/  
+No local hosting needed, just visit: https://fallingmy.github.io/ns-web-dbibackend/
+
+---
+
 ## ⚠️ 项目状态 / Project Status
 
 **本代码由 DeepSeek 编写。** 目前功能大体可用，但存在许多小 bug，欢迎提交 Issue 和 Pull Request。  
@@ -47,13 +54,6 @@ This is a pure frontend HTML tool that uses the WebUSB API in Chromium-based bro
   **Timeout protection**：Built-in heartbeat detection and USB read/write timeouts
 - 🌐 **中英双语**：右上角一键切换全部界面语言（含排查指南）  
   **Bilingual UI**：One-click language switch (ZH/EN) in the top-right corner, including the troubleshooting guide
-
----
-
-## 🌐 在线使用 / Online
-
-无需本地运行，直接访问：https://fallingmy.github.io/ns-web-dbibackend/  
-No local hosting needed, just visit: https://fallingmy.github.io/ns-web-dbibackend/
 
 ---
 
