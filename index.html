@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Switch DBI Backend WebUSB 传输工具 (稳定版 v9)</title>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <style>
         :root {
             --bg: #0d1117;
@@ -46,7 +47,11 @@
             box-shadow: 0 4px 24px rgba(0,0,0,0.4);
         }
         h1 { font-size: 1.5rem; font-weight: 700; color: var(--accent); margin-bottom: 4px; }
+        .header-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+        .header-row h1 { margin-bottom: 0; }
         .subtitle { color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 20px; }
+        .lucide { width: 16px; height: 16px; }
+        h1 .lucide { width: 22px; height: 22px; }
         .status-bar { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--bg-tertiary); border-radius: var(--radius); margin-bottom: 20px; border: 1px solid var(--border); flex-wrap: wrap; }
         .status-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--text-secondary); }
         .status-dot.connected { background: var(--success); box-shadow: 0 0 8px rgba(63,185,80,0.5); animation: pulse 2s infinite; }
@@ -99,33 +104,36 @@
 </head>
 <body>
     <div class="container">
-        <h1>🔗 Switch DBI Backend WebUSB 工具</h1>
-        <p class="subtitle">稳定版 v9 · 文件计量恢复 · 速率修正 · 消除分片完成误报</p>
+        <div class="header-row">
+            <h1><i data-lucide="usb">🔗</i> <span data-i18n="app_title">Switch DBI Backend WebUSB 工具</span></h1>
+            <button class="btn" id="btnLang" onclick="toggleLang()" data-i18n-title="lang_title" title="切换语言"><i data-lucide="languages">🌐</i> <span data-i18n="lang_btn">EN</span></button>
+        </div>
+        <p class="subtitle" data-i18n="subtitle">稳定版 v9 · 文件计量恢复 · 速率修正 · 消除分片完成误报</p>
 
         <div class="status-bar">
             <span class="status-dot" id="statusDot"></span>
-            <span class="status-text" id="statusText">未连接</span>
+            <span class="status-text" id="statusText" data-i18n="status_not_connected">未连接</span>
             <span style="flex:1;"></span>
-            <button class="btn btn-help" onclick="openHelp()" title="帮助 / Help" aria-label="帮助">?</button>
-            <button class="btn btn-primary" id="btnConnect" onclick="connectUSB()">连接 Switch</button>
-            <button class="btn" id="btnDisconnect" onclick="disconnectUSB()" disabled>断开</button>
-            <button class="btn btn-success" id="btnStartServer" onclick="startServer()" disabled>▶ 启动服务</button>
+            <button class="btn btn-help" onclick="openHelp()" data-i18n-title="btn_help_title" title="帮助" aria-label="帮助"><i data-lucide="help-circle">?</i></button>
+            <button class="btn btn-primary" id="btnConnect" onclick="connectUSB()"><span data-i18n="btn_connect">连接 Switch</span></button>
+            <button class="btn" id="btnDisconnect" onclick="disconnectUSB()" disabled><span data-i18n="btn_disconnect">断开</span></button>
+            <button class="btn btn-success" id="btnStartServer" onclick="startServer()" disabled><i data-lucide="play">▶</i> <span data-i18n="btn_start_server">启动服务</span></button>
         </div>
 
         <div class="notice notice-info">
-            <span>ℹ️</span>
-            <div>需要 Chrome/Edge，HTTPS 或 localhost。Switch 上启动 DBI 并选择「后端」。</div>
+            <span><i data-lucide="info">ℹ️</i></span>
+            <div data-i18n="notice_info">需要 Chrome/Edge，HTTPS 或 localhost。Switch 上启动 DBI 并选择「后端」。</div>
         </div>
 
         <div class="tabs">
-            <button class="tab active" data-tab="transfer" onclick="switchTab('transfer')">📦 文件传输</button>
-            <button class="tab" data-tab="log" onclick="switchTab('log')">📋 日志</button>
+            <button class="tab active" data-tab="transfer" onclick="switchTab('transfer')"><i data-lucide="package">📦</i> <span data-i18n="tab_transfer">文件传输</span></button>
+            <button class="tab" data-tab="log" onclick="switchTab('log')"><i data-lucide="clipboard-list">📋</i> <span data-i18n="tab_log">日志</span></button>
         </div>
 
         <div class="tab-content active" id="tab-transfer">
             <div class="file-drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
-                <div>📁 点击或拖放文件</div>
-                <p style="color:var(--text-secondary);font-size:0.875rem;">支持 .nsp .xci .nsz</p>
+                <div><i data-lucide="folder-open">📁</i> <span data-i18n="drop_hint">点击或拖放文件</span></div>
+                <p style="color:var(--text-secondary);font-size:0.875rem;" data-i18n="drop_support">支持 .nsp .xci .nsz</p>
                 <input type="file" id="fileInput" multiple accept=".nsp,.xci,.nsz" style="display:none;" onchange="handleFileSelect(event)">
             </div>
             <ul class="file-list" id="fileList"></ul>
@@ -139,14 +147,14 @@
                 <div class="file-overall-progress" id="fileOverallProgress"></div>
             </div>
             <div style="margin-top:12px;">
-                <button class="btn btn-danger" onclick="clearFileList()">🗑️ 清空列表</button>
+                <button class="btn btn-danger" onclick="clearFileList()"><i data-lucide="trash-2">🗑️</i> <span data-i18n="btn_clear">清空列表</span></button>
             </div>
         </div>
 
         <div class="tab-content" id="tab-log">
             <div style="margin-bottom:8px;">
-                <button class="btn" onclick="clearLog()">🗑️ 清空日志</button>
-                <button class="btn" onclick="exportLog()">📥 导出日志</button>
+                <button class="btn" onclick="clearLog()"><i data-lucide="trash-2">🗑️</i> <span data-i18n="btn_clear_log">清空日志</span></button>
+                <button class="btn" onclick="exportLog()"><i data-lucide="download">📥</i> <span data-i18n="btn_export_log">导出日志</span></button>
             </div>
             <div class="log-area" id="logArea"></div>
         </div>
@@ -155,14 +163,14 @@
     <!-- Windows 驱动提示（仅 Windows 系统显示一次） -->
     <div class="modal-overlay hidden" id="winNotice">
         <div class="modal" role="dialog" aria-modal="true" aria-labelledby="winNoticeTitle">
-            <h2 id="winNoticeTitle">⚠️ 您正在使用 Windows 系统</h2>
-            <p class="modal-sub">You are using Windows</p>
-            <p>这可能导致您无法正常连接到您的 Switch。建议您直接使用 DBI 的 MTP 连接模式（无需安装驱动）。如果仍然需要使用本工具，请<a onclick="openHelp()" style="cursor:pointer;">查看 WinUSB 驱动安装</a>。</p>
-            <p style="color:var(--text-secondary);">This may prevent you from connecting to your Switch properly. We recommend using DBI's MTP connection mode instead (no driver required). If you still need this tool, please see the <a onclick="openHelp()" style="cursor:pointer;">WinUSB driver installation</a>.</p>
-            <p>⚠️ 安装 WinUSB 驱动后，DBI 的 MTP 模式将无法使用（同一设备同一时间只能绑定一种驱动）。如需恢复 MTP：设备管理器 → 更新驱动程序 → 浏览我的电脑 → 让我从列表中选取 → MTP USB Device。</p>
-            <p style="color:var(--text-secondary);">⚠️ After installing the WinUSB driver, DBI's MTP mode will stop working (only one driver can be bound to a device at a time). To restore MTP: Device Manager → Update driver → Browse my computer → Let me pick from a list → MTP USB Device.</p>
+            <h2 id="winNoticeTitle" data-i18n-html="win_title"><i data-lucide="alert-triangle">⚠️</i> 您正在使用 Windows 系统</h2>
+            <p class="modal-sub" data-i18n="win_sub">You are using Windows</p>
+            <p data-i18n-html="win_p1">这可能导致您无法正常连接到您的 Switch。建议您直接使用 DBI 的 MTP 连接模式（无需安装驱动）。如果仍然需要使用本工具，请<a onclick="openHelp()" style="cursor:pointer;">查看 WinUSB 驱动安装</a>。</p>
+            <p style="color:var(--text-secondary);" data-i18n-html="win_p2">This may prevent you from connecting to your Switch properly. We recommend using DBI's MTP connection mode instead (no driver required). If you still need this tool, please see the <a onclick="openHelp()" style="cursor:pointer;">WinUSB driver installation</a>.</p>
+            <p data-i18n-html="win_p3">⚠️ 安装 WinUSB 驱动后，DBI 的 MTP 模式将无法使用（同一设备同一时间只能绑定一种驱动）。如需恢复 MTP：设备管理器 → 更新驱动程序 → 浏览我的电脑 → 让我从列表中选取 → MTP USB Device。</p>
+            <p style="color:var(--text-secondary);" data-i18n-html="win_p4">⚠️ After installing the WinUSB driver, DBI's MTP mode will stop working (only one driver can be bound to a device at a time). To restore MTP: Device Manager → Update driver → Browse my computer → Let me pick from a list → MTP USB Device.</p>
             <div class="modal-actions">
-                <button class="btn btn-primary" onclick="dismissWindowsNotice()">OK</button>
+                <button class="btn btn-primary" onclick="dismissWindowsNotice()" data-i18n="btn_ok">OK</button>
             </div>
         </div>
     </div>
@@ -170,23 +178,23 @@
     <!-- 帮助 / Troubleshooting 弹窗 -->
     <div class="modal-overlay hidden" id="helpModal">
         <div class="modal modal-help" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
-            <h2 id="helpTitle">❓ 帮助 / Help</h2>
-            <p class="modal-sub">无法连接设备的排查指南 / Troubleshooting guide</p>
+            <h2 id="helpTitle" data-i18n-html="help_title"><i data-lucide="help-circle">❓</i> 帮助</h2>
+            <p class="modal-sub" data-i18n="help_sub">无法连接设备的排查指南</p>
             <div class="modal-help-body">
-                <h3>Windows：修改 USB 驱动</h3>
-                <p><b>1. 下载</b>：从 <a href="https://zadig.akeo.ie" target="_blank" rel="noopener">zadig.akeo.ie</a> 下载 Zadig 驱动安装工具。</p>
-                <p><b>2. 安装</b>：Switch 上启动 DBI「后端」模式并连接电脑 → 打开 Zadig → Options → List All Devices → 选择 Switch 设备（VID 057E / PID 3000）→ 目标驱动选 <b>WinUSB</b> → 点击 Install Driver → 重新插拔 USB。</p>
-                <p><b>3. 修改</b>：如果之前装过 libusbK 等其他驱动导致设备无法识别，重复第 2 步把驱动改为 WinUSB 即可（无需先卸载旧驱动）。</p>
-                <p><b>4. 还原</b>：安装 WinUSB 后 DBI 的 MTP 模式将不可用。恢复 MTP：设备管理器 → 右键 Switch 设备 → 更新驱动程序 → 浏览我的电脑 → 让我从列表中选取 → 选择 <b>MTP USB Device</b> → 安装。如需还原为 libusbK（供旧版 dbibackend 使用），用 Zadig 重复第 2 步并选择 libusbK 即可。</p>
-                <h3>常见问题 / FAQ</h3>
-                <p><b>选择设备时看不到 Switch</b>：Windows 下通常是驱动问题，见上方教程；macOS 下检查 USB 线是否支持数据传输、更换接口，并确认 DBI 已进入「后端」模式。</p>
-                <p><b>提示"不支持 WebUSB"</b>：页面必须通过 HTTPS 或 localhost 访问，直接打开本地文件（file://）或通过非 localhost 的 IP 访问无法使用 WebUSB。</p>
-                <p><b>传输中断后无法重新连接</b>：USB 传输超时后连接无法恢复，工具会自动断开并提示重新连接；如仍失败请刷新页面后重试。</p>
-                <p><b>资源管理器里看不到 MTP 设备</b>：设备的驱动被替换过（如安装了 WinUSB / libusbK），按上方「还原」步骤恢复 MTP 驱动。</p>
-                <p><b>提示"未找到 Bulk 端点"</b>：确认 Switch 上 DBI 处于「后端」模式且驱动正确，重新插拔 USB 后重试。</p>
+                <h3 data-i18n="help_win_h3">Windows：修改 USB 驱动</h3>
+                <p data-i18n-html="help_w1"><b>1. 下载</b>：从 <a href="https://zadig.akeo.ie" target="_blank" rel="noopener">zadig.akeo.ie</a> 下载 Zadig 驱动安装工具。</p>
+                <p data-i18n-html="help_w2"><b>2. 安装</b>：Switch 上启动 DBI「后端」模式并连接电脑 → 打开 Zadig → Options → List All Devices → 选择 Switch 设备（VID 057E / PID 3000）→ 目标驱动选 <b>WinUSB</b> → 点击 Install Driver → 重新插拔 USB。</p>
+                <p data-i18n-html="help_w3"><b>3. 修改</b>：如果之前装过 libusbK 等其他驱动导致设备无法识别，重复第 2 步把驱动改为 WinUSB 即可（无需先卸载旧驱动）。</p>
+                <p data-i18n-html="help_w4"><b>4. 还原</b>：安装 WinUSB 后 DBI 的 MTP 模式将不可用。恢复 MTP：设备管理器 → 右键 Switch 设备 → 更新驱动程序 → 浏览我的电脑 → 让我从列表中选取 → 选择 <b>MTP USB Device</b> → 安装。如需还原为 libusbK（供旧版 dbibackend 使用），用 Zadig 重复第 2 步并选择 libusbK 即可。</p>
+                <h3 data-i18n="help_faq_h3">常见问题</h3>
+                <p data-i18n-html="faq1"><b>选择设备时看不到 Switch</b>：Windows 下通常是驱动问题，见上方教程；macOS 下检查 USB 线是否支持数据传输、更换接口，并确认 DBI 已进入「后端」模式。</p>
+                <p data-i18n-html="faq2"><b>提示"不支持 WebUSB"</b>：页面必须通过 HTTPS 或 localhost 访问，直接打开本地文件（file://）或通过非 localhost 的 IP 访问无法使用 WebUSB。</p>
+                <p data-i18n-html="faq3"><b>传输中断后无法重新连接</b>：USB 传输超时后连接无法恢复，工具会自动断开并提示重新连接；如仍失败请刷新页面后重试。</p>
+                <p data-i18n-html="faq4"><b>资源管理器里看不到 MTP 设备</b>：设备的驱动被替换过（如安装了 WinUSB / libusbK），按上方「还原」步骤恢复 MTP 驱动。</p>
+                <p data-i18n-html="faq5"><b>提示"未找到 Bulk 端点"</b>：确认 Switch 上 DBI 处于「后端」模式且驱动正确，重新插拔 USB 后重试。</p>
             </div>
             <div class="modal-actions">
-                <button class="btn btn-primary" onclick="closeHelp()">OK</button>
+                <button class="btn btn-primary" onclick="closeHelp()" data-i18n="btn_ok">OK</button>
             </div>
         </div>
     </div>
@@ -218,6 +226,8 @@
         let isConnected = false;
         let serverRunning = false;
         let transferCancelled = false;
+        let currentLang = 'zh';
+        let currentStatus = null; // { key, args } 当前连接状态，语言切换时重渲染
         let fileMap = new Map();
         let currentTransferInfo = null;
         let lastCommandTime = 0;
@@ -271,10 +281,148 @@
             a.click();
             setTimeout(() => URL.revokeObjectURL(url), 1000);
         }
-        function updateConnectionStatus(connected, message) {
+
+        // ============================================================
+        //  国际化 (i18n)
+        // ============================================================
+        const I18N = {
+            zh: {
+                app_title: 'Switch DBI Backend WebUSB 工具',
+                subtitle: '稳定版 v9 · 文件计量恢复 · 速率修正 · 消除分片完成误报',
+                lang_btn: 'EN', lang_title: '切换语言',
+                status_not_connected: '未连接',
+                btn_connect: '连接 Switch', btn_disconnect: '断开', btn_start_server: '启动服务',
+                notice_info: '需要 Chrome/Edge，HTTPS 或 localhost。Switch 上启动 DBI 并选择「后端」。',
+                tab_transfer: '文件传输', tab_log: '日志',
+                drop_hint: '点击或拖放文件', drop_support: '支持 .nsp .xci .nsz',
+                filelist_empty: '暂无文件', btn_remove: '移除',
+                btn_clear: '清空列表', btn_clear_log: '清空日志', btn_export_log: '导出日志',
+                progress_label: '文件覆盖：{0} ({1} / {2})',
+                eta_prefix: '剩余: {0}', eta_na: '剩余: --',
+                transferred: '已传输（去重）：{0} / {1}',
+                confirm_clear: '服务运行中，确定清空？', confirm_disconnect: '服务运行中，断开？',
+                server_running_beforeunload: '服务运行中',
+                status_connected_with: '已连接: {0}', status_connected: '已连接', status_disconnected: '已断开',
+                status_device_disconnected: '设备已断开', status_disconnected_timeout: '已断开（传输超时）',
+                status_connect_failed: '连接失败',
+                log_loaded: 'Switch DBI Backend WebUSB 工具 v9 已加载',
+                log_loaded_note: '文件计量恢复，速率修正，无分片完成误报',
+                log_no_webusb: '❌ 不支持 WebUSB',
+                log_selected: '已选择: {0}', log_endpoints: 'OUT: {0}, IN: {1}',
+                log_usb_ok: '✅ USB 连接成功',
+                log_conn_failed: '连接失败: {0}', log_cancelled: '已取消选择设备',
+                log_device_unplugged: '设备断开',
+                log_server_started: '🚀 启动服务', log_server_stopped: '⏹️ 服务停止',
+                log_heartbeat: '心跳超时', log_loop_error: '命令循环错误: {0}',
+                log_transfer_timeout: 'USB 传输超时，无法恢复，正在断开设备…',
+                log_unknown_cmd: '未知命令: cmd={0}, size={1}',
+                log_file_added: '已添加: {0} ({1})', log_file_removed: '已移除: {0}',
+                log_unsupported: '不支持: {0}', log_invalid_name: '非法文件名: {0}', log_too_large: '文件过大: {0}',
+                log_list_cleared: '文件列表已清空',
+                log_complete: '✅ 文件传输完成: {0}', log_transfer_error: '传输错误: {0}',
+                eta_s: '{0} 秒', eta_m: '{0} 分 {1} 秒', eta_h: '{0} 时 {1} 分',
+                win_title: '<i data-lucide="alert-triangle">⚠️</i> 您正在使用 Windows 系统',
+                win_sub: 'You are using Windows',
+                win_p1: '这可能导致您无法正常连接到您的 Switch。建议您直接使用 DBI 的 MTP 连接模式（无需安装驱动）。如果仍然需要使用本工具，请<a onclick="openHelp()" style="cursor:pointer;">查看 WinUSB 驱动安装</a>。',
+                win_p2: 'This may prevent you from connecting to your Switch properly. We recommend using DBI\'s MTP connection mode instead (no driver required). If you still need this tool, please see the <a onclick="openHelp()" style="cursor:pointer;">WinUSB driver installation</a>.',
+                win_p3: '⚠️ 安装 WinUSB 驱动后，DBI 的 MTP 模式将无法使用（同一设备同一时间只能绑定一种驱动）。如需恢复 MTP：设备管理器 → 更新驱动程序 → 浏览我的电脑 → 让我从列表中选取 → MTP USB Device。',
+                win_p4: '⚠️ After installing the WinUSB driver, DBI\'s MTP mode will stop working (only one driver can be bound to a device at a time). To restore MTP: Device Manager → Update driver → Browse my computer → Let me pick from a list → MTP USB Device.',
+                help_title: '<i data-lucide="help-circle">❓</i> 帮助',
+                help_sub: '无法连接设备的排查指南',
+                help_win_h3: 'Windows：修改 USB 驱动',
+                help_w1: '<b>1. 下载</b>：从 <a href="https://zadig.akeo.ie" target="_blank" rel="noopener">zadig.akeo.ie</a> 下载 Zadig 驱动安装工具。',
+                help_w2: '<b>2. 安装</b>：Switch 上启动 DBI「后端」模式并连接电脑 → 打开 Zadig → Options → List All Devices → 选择 Switch 设备（VID 057E / PID 3000）→ 目标驱动选 <b>WinUSB</b> → 点击 Install Driver → 重新插拔 USB。',
+                help_w3: '<b>3. 修改</b>：如果之前装过 libusbK 等其他驱动导致设备无法识别，重复第 2 步把驱动改为 WinUSB 即可（无需先卸载旧驱动）。',
+                help_w4: '<b>4. 还原</b>：安装 WinUSB 后 DBI 的 MTP 模式将不可用。恢复 MTP：设备管理器 → 右键 Switch 设备 → 更新驱动程序 → 浏览我的电脑 → 让我从列表中选取 → 选择 <b>MTP USB Device</b> → 安装。如需还原为 libusbK（供旧版 dbibackend 使用），用 Zadig 重复第 2 步并选择 libusbK 即可。',
+                help_faq_h3: '常见问题',
+                faq1: '<b>选择设备时看不到 Switch</b>：Windows 下通常是驱动问题，见上方教程；macOS 下检查 USB 线是否支持数据传输、更换接口，并确认 DBI 已进入「后端」模式。',
+                faq2: '<b>提示"不支持 WebUSB"</b>：页面必须通过 HTTPS 或 localhost 访问，直接打开本地文件（file://）或通过非 localhost 的 IP 访问无法使用 WebUSB。',
+                faq3: '<b>传输中断后无法重新连接</b>：USB 传输超时后连接无法恢复，工具会自动断开并提示重新连接；如仍失败请刷新页面后重试。',
+                faq4: '<b>资源管理器里看不到 MTP 设备</b>：设备的驱动被替换过（如安装了 WinUSB / libusbK），按上方「还原」步骤恢复 MTP 驱动。',
+                faq5: '<b>提示"未找到 Bulk 端点"</b>：确认 Switch 上 DBI 处于「后端」模式且驱动正确，重新插拔 USB 后重试。',
+                btn_ok: 'OK', btn_help_title: '帮助'
+            },
+            en: {
+                app_title: 'Switch DBI Backend WebUSB Tool',
+                subtitle: 'Stable v9 · fixed file progress · speed fix · no false chunk-complete',
+                lang_btn: '中文', lang_title: 'Switch language',
+                status_not_connected: 'Not connected',
+                btn_connect: 'Connect Switch', btn_disconnect: 'Disconnect', btn_start_server: 'Start Server',
+                notice_info: 'Requires Chrome/Edge, HTTPS or localhost. Launch DBI on the Switch and select "Backend".',
+                tab_transfer: 'Transfer', tab_log: 'Log',
+                drop_hint: 'Click or drag & drop files', drop_support: 'Supported: .nsp .xci .nsz',
+                filelist_empty: 'No files', btn_remove: 'Remove',
+                btn_clear: 'Clear List', btn_clear_log: 'Clear Log', btn_export_log: 'Export Log',
+                progress_label: 'Coverage: {0} ({1} / {2})',
+                eta_prefix: 'ETA: {0}', eta_na: 'ETA: --',
+                transferred: 'Transferred (dedup): {0} / {1}',
+                confirm_clear: 'Server running, clear anyway?', confirm_disconnect: 'Server running, disconnect anyway?',
+                server_running_beforeunload: 'Server running',
+                status_connected_with: 'Connected: {0}', status_connected: 'Connected', status_disconnected: 'Disconnected',
+                status_device_disconnected: 'Device disconnected', status_disconnected_timeout: 'Disconnected (transfer timeout)',
+                status_connect_failed: 'Connection failed',
+                log_loaded: 'Switch DBI Backend WebUSB Tool v9 loaded',
+                log_loaded_note: 'File progress fixed, speed fixed, no false chunk-complete',
+                log_no_webusb: '❌ WebUSB not supported',
+                log_selected: 'Selected: {0}', log_endpoints: 'OUT: {0}, IN: {1}',
+                log_usb_ok: '✅ USB connected',
+                log_conn_failed: 'Connection failed: {0}', log_cancelled: 'Device selection cancelled',
+                log_device_unplugged: 'Device disconnected',
+                log_server_started: '🚀 Server started', log_server_stopped: '⏹️ Server stopped',
+                log_heartbeat: 'Heartbeat timeout', log_loop_error: 'Command loop error: {0}',
+                log_transfer_timeout: 'USB transfer timeout, unrecoverable, disconnecting…',
+                log_unknown_cmd: 'Unknown command: cmd={0}, size={1}',
+                log_file_added: 'Added: {0} ({1})', log_file_removed: 'Removed: {0}',
+                log_unsupported: 'Unsupported: {0}', log_invalid_name: 'Invalid filename: {0}', log_too_large: 'File too large: {0}',
+                log_list_cleared: 'File list cleared',
+                log_complete: '✅ Transfer complete: {0}', log_transfer_error: 'Transfer error: {0}',
+                eta_s: '{0} s', eta_m: '{0} min {1} s', eta_h: '{0} h {1} min',
+                win_title: '<i data-lucide="alert-triangle">⚠️</i> You are using Windows',
+                win_sub: '您正在使用 Windows 系统',
+                win_p1: 'This may prevent you from connecting to your Switch properly. We recommend using DBI\'s MTP connection mode instead (no driver required). If you still need this tool, please see the <a onclick="openHelp()" style="cursor:pointer;">WinUSB driver installation</a>.',
+                win_p2: '这可能导致您无法正常连接到您的 Switch。建议您直接使用 DBI 的 MTP 连接模式（无需安装驱动）。如果仍然需要使用本工具，请<a onclick="openHelp()" style="cursor:pointer;">查看 WinUSB 驱动安装</a>。',
+                win_p3: '⚠️ After installing the WinUSB driver, DBI\'s MTP mode will stop working (only one driver can be bound to a device at a time). To restore MTP: Device Manager → Update driver → Browse my computer → Let me pick from a list → MTP USB Device.',
+                win_p4: '⚠️ 安装 WinUSB 驱动后，DBI 的 MTP 模式将无法使用（同一设备同一时间只能绑定一种驱动）。如需恢复 MTP：设备管理器 → 更新驱动程序 → 浏览我的电脑 → 让我从列表中选取 → MTP USB Device。',
+                help_title: '<i data-lucide="help-circle">❓</i> Help',
+                help_sub: 'Troubleshooting guide',
+                help_win_h3: 'Windows: USB driver guide',
+                help_w1: '<b>1. Download</b>: Get Zadig from <a href="https://zadig.akeo.ie" target="_blank" rel="noopener">zadig.akeo.ie</a>.',
+                help_w2: '<b>2. Install</b>: Launch DBI "Backend" mode on the Switch and connect → open Zadig → Options → List All Devices → select the Switch device (VID 057E / PID 3000) → choose <b>WinUSB</b> → click Install Driver → replug the USB cable.',
+                help_w3: '<b>3. Change</b>: If another driver (e.g. libusbK) was installed and the device is not recognized, repeat step 2 to switch to WinUSB (no need to uninstall first).',
+                help_w4: '<b>4. Restore</b>: After installing WinUSB, DBI\'s MTP mode will not work. To restore MTP: Device Manager → right-click the Switch device → Update driver → Browse my computer → Let me pick from a list → select <b>MTP USB Device</b> → Install. To restore libusbK (for old dbibackend), repeat step 2 in Zadig and choose libusbK.',
+                help_faq_h3: 'FAQ',
+                faq1: '<b>Switch not listed in the device picker</b>: On Windows this is usually a driver issue (see above); on macOS check the USB cable supports data, try another port, and confirm DBI is in "Backend" mode.',
+                faq2: '<b>"WebUSB not supported" message</b>: The page must be served over HTTPS or localhost. Opening the local file (file://) or accessing via a non-localhost IP will not work.',
+                faq3: '<b>Cannot reconnect after a transfer failure</b>: A USB timeout cannot be recovered, the tool auto-disconnects; reconnect, or refresh the page if it still fails.',
+                faq4: '<b>MTP device not shown in Explorer</b>: The driver was replaced (e.g. WinUSB / libusbK installed). Follow the "Restore" steps above to bring back the MTP driver.',
+                faq5: '<b>"No Bulk endpoint found" message</b>: Confirm DBI is in "Backend" mode on the Switch and the driver is correct, then replug the USB cable.',
+                btn_ok: 'OK', btn_help_title: 'Help'
+            }
+        };
+        function t(key, ...args) {
+            let s = (I18N[currentLang] && I18N[currentLang][key]) || I18N.zh[key] || key;
+            args.forEach((a, i) => { s = s.split(`{${i}}`).join(String(a)); });
+            return s;
+        }
+        function applyLang() {
+            document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
+            document.querySelectorAll('[data-i18n-html]').forEach(el => { el.innerHTML = t(el.dataset.i18nHtml); });
+            document.querySelectorAll('[data-i18n-title]').forEach(el => { el.title = t(el.dataset.i18nTitle); });
+            if (currentStatus) statusText.textContent = t(currentStatus.key, ...(currentStatus.args || []));
+            updateFileListUI();
+            if (!progressContainer.classList.contains('active')) hideProgress();
+            if (window.lucide) lucide.createIcons();
+        }
+        function toggleLang() {
+            currentLang = currentLang === 'zh' ? 'en' : 'zh';
+            try { localStorage.setItem('dbi_lang', currentLang); } catch(e) {}
+            applyLang();
+        }
+        function updateConnectionStatus(connected, message, ...args) {
             isConnected = connected;
             statusDot.className = connected ? 'status-dot connected' : 'status-dot';
-            statusText.textContent = message || (connected ? '已连接' : '未连接');
+            currentStatus = { key: message, args };
+            statusText.textContent = t(message, ...args);
             btnConnect.disabled = connected;
             btnDisconnect.disabled = !connected;
             btnStartServer.disabled = !connected || serverRunning;
@@ -288,9 +436,9 @@
         function formatSpeed(bps) { return bps > 0 ? `${(bps / 1048576).toFixed(1)} MB/s` : '0 MB/s'; }
         function formatEta(s) {
             if (s <= 0 || !isFinite(s)) return '--';
-            if (s < 60) return `${Math.ceil(s)} 秒`;
-            if (s < 3600) return `${Math.floor(s/60)} 分 ${Math.ceil(s%60)} 秒`;
-            return `${Math.floor(s/3600)} 时 ${Math.floor((s%3600)/60)} 分`;
+            if (s < 60) return t('eta_s', Math.ceil(s));
+            if (s < 3600) return t('eta_m', Math.floor(s/60), Math.ceil(s%60));
+            return t('eta_h', Math.floor(s/3600), Math.floor((s%3600)/60));
         }
         function getFileExtension(n) { return n.toLowerCase().split('.').pop(); }
         function escapeHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
@@ -369,18 +517,18 @@
             const file = fileMap.get(fileName);
             if (!file) {
                 progressFill.style.width = '0%';
-                progressLabel.textContent = '文件覆盖：0.0% (0 B / 0 B)';
+                progressLabel.textContent = t('progress_label', '0.0', formatBytes(0), formatBytes(0));
                 fileOverallProgress.textContent = '';
                 return;
             }
             const covered = getCoveredBytes(fileName);
             const percent = file.size > 0 ? (covered / file.size) * 100 : 0;
             progressFill.style.width = `${percent}%`;
-            progressLabel.textContent = `文件覆盖：${percent.toFixed(1)}% (${formatBytes(covered)} / ${formatBytes(file.size)})`;
-            fileOverallProgress.textContent = `已传输（去重）：${formatBytes(covered)} / ${formatBytes(file.size)}`;
+            progressLabel.textContent = t('progress_label', percent.toFixed(1), formatBytes(covered), formatBytes(file.size));
+            fileOverallProgress.textContent = t('transferred', formatBytes(covered), formatBytes(file.size));
             if (covered >= file.size) {
                 progressFill.classList.add('complete');
-                progressEta.textContent = '剩余: --';
+                progressEta.textContent = t('eta_na');
             } else {
                 progressFill.classList.remove('complete');
             }
@@ -412,7 +560,7 @@
                 const file = fileMap.get(currentTransferInfo.fileName);
                 if (file) {
                     const remainingBytes = file.size - covered;
-                    progressEta.textContent = `剩余: ${formatEta(remainingBytes / smoothedSpeed)}`;
+                    progressEta.textContent = t('eta_prefix', formatEta(remainingBytes / smoothedSpeed));
                 }
             }
         }
@@ -423,7 +571,7 @@
         function updateFileListUI() {
             fileListEl.innerHTML = '';
             if (fileMap.size === 0) {
-                fileListEl.innerHTML = '<li style="color:var(--text-secondary);list-style:none;">暂无文件</li>';
+                fileListEl.innerHTML = `<li style="color:var(--text-secondary);list-style:none;">${t('filelist_empty')}</li>`;
                 return;
             }
             for (const [name, file] of fileMap) {
@@ -432,7 +580,7 @@
                 li.innerHTML = `
                     <span>${escapeHtml(name)}</span>
                     <span style="color:var(--text-secondary);font-size:0.75rem;">${formatBytes(file.size)}</span>
-                    <button class="btn btn-sm btn-danger" data-name="${escapeHtml(name)}" onclick="removeFile(this.dataset.name)">移除</button>
+                    <button class="btn btn-sm btn-danger" data-name="${escapeHtml(name)}" onclick="removeFile(this.dataset.name)">${t('btn_remove')}</button>
                 `;
                 fileListEl.appendChild(li);
             }
@@ -442,27 +590,27 @@
                 fileMap.delete(name);
                 fileCoverageMap.delete(name);
                 updateFileListUI();
-                log(`已移除: ${name}`);
+                log(t('log_file_removed', name));
             }
         }
         function clearFileList() {
-            if (serverRunning && !confirm('服务运行中，确定清空？')) return;
+            if (serverRunning && !confirm(t('confirm_clear'))) return;
             fileMap.clear();
             fileCoverageMap.clear();
             pendingIntervals = [];
             updateFileListUI();
             hideProgress();
-            log('文件列表已清空');
+            log(t('log_list_cleared'));
         }
         function isValidFileName(n) { return !/[\\/\x00-\x1F]/.test(n); }
         function addFiles(files) {
             for (const file of files) {
                 const ext = getFileExtension(file.name);
-                if (!['nsp','xci','nsz'].includes(ext)) { log(`不支持: ${file.name}`, 'warning'); continue; }
-                if (!isValidFileName(file.name)) { log(`非法文件名: ${file.name}`, 'warning'); continue; }
-                if (file.size > MAX_FILE_SIZE) { log(`文件过大: ${file.name}`, 'warning'); continue; }
+                if (!['nsp','xci','nsz'].includes(ext)) { log(t('log_unsupported', file.name), 'warning'); continue; }
+                if (!isValidFileName(file.name)) { log(t('log_invalid_name', file.name), 'warning'); continue; }
+                if (file.size > MAX_FILE_SIZE) { log(t('log_too_large', file.name), 'warning'); continue; }
                 fileMap.set(file.name, file);
-                log(`已添加: ${file.name} (${formatBytes(file.size)})`);
+                log(t('log_file_added', file.name, formatBytes(file.size)));
             }
             updateFileListUI();
         }
@@ -475,9 +623,9 @@
             progressContainer.classList.remove('active');
             progressFill.style.width = '0%';
             progressFill.classList.remove('complete');
-            progressLabel.textContent = '文件覆盖：0.0% (0 B / 0 B)';
+            progressLabel.textContent = t('progress_label', '0.0', formatBytes(0), formatBytes(0));
             progressSpeed.textContent = '0 MB/s';
-            progressEta.textContent = '剩余: --';
+            progressEta.textContent = t('eta_na');
             fileOverallProgress.textContent = '';
         }
         function showProgress() { progressContainer.classList.add('active'); }
@@ -489,21 +637,21 @@
             try {
                 const device = await navigator.usb.requestDevice({ filters: [{ vendorId: USB_VID, productId: USB_PID }] });
                 if (!device) return;
-                log(`已选择: ${device.productName || '未知'}`);
+                log(t('log_selected', device.productName || '?'));
                 await device.open();
                 if (device.configuration === null) await device.selectConfiguration(1);
                 await device.claimInterface(0);
                 const eps = scanEndpoints(device);
                 bulkOutEndpointNumber = eps.out.endpointNumber;
                 bulkInEndpointNumber = eps.inp.endpointNumber;
-                log(`OUT: ${bulkOutEndpointNumber}, IN: ${bulkInEndpointNumber}`);
+                log(t('log_endpoints', bulkOutEndpointNumber, bulkInEndpointNumber));
                 usbDevice = device;
-                updateConnectionStatus(true, `已连接: ${device.productName || 'Switch'}`);
-                log('✅ USB 连接成功');
+                updateConnectionStatus(true, 'status_connected_with', device.productName || t('status_connected'));
+                log(t('log_usb_ok'));
             } catch (err) {
-                if (err.name === 'NotFoundError') { log('已取消选择设备'); return; }
-                log(`连接失败: ${err.message}`, 'error');
-                updateConnectionStatus(false, '连接失败');
+                if (err.name === 'NotFoundError') { log(t('log_cancelled')); return; }
+                log(t('log_conn_failed', err.message), 'error');
+                updateConnectionStatus(false, 'status_connect_failed');
             }
         }
         function scanEndpoints(device) {
@@ -522,12 +670,12 @@
             return { out, inp };
         }
         function handleUSBDisconnect(event) {
-            if (usbDevice) { log('设备断开', 'error'); stopServer(); usbDevice = null; bulkOutEndpointNumber = null; bulkInEndpointNumber = null; updateConnectionStatus(false, '设备已断开'); }
+            if (usbDevice) { log(t('log_device_unplugged'), 'error'); stopServer(); usbDevice = null; bulkOutEndpointNumber = null; bulkInEndpointNumber = null; updateConnectionStatus(false, 'status_device_disconnected'); }
         }
         async function disconnectUSB() {
-            if (serverRunning) { if (!confirm('服务运行中，断开？')) return; stopServer(); }
+            if (serverRunning) { if (!confirm(t('confirm_disconnect'))) return; stopServer(); }
             await forceCloseDevice();
-            updateConnectionStatus(false, '已断开');
+            updateConnectionStatus(false, 'status_disconnected');
         }
 
         // ============================================================
@@ -544,7 +692,7 @@
             pendingIntervals = [];
             lastMergeTime = performance.now();
             btnStartServer.disabled = true;
-            log('🚀 启动服务');
+            log(t('log_server_started'));
             serverLoop();
         }
         function stopServer() {
@@ -552,12 +700,12 @@
             transferCancelled = true;
             btnStartServer.disabled = false;
             hideProgress();
-            log('⏹️ 服务停止');
+            log(t('log_server_stopped'));
         }
         async function serverLoop() {
             while (serverRunning && usbDevice) {
                 try {
-                    if (performance.now() - lastCommandTime > HEARTBEAT_TIMEOUT) { log('心跳超时', 'error'); stopServer(); break; }
+                    if (performance.now() - lastCommandTime > HEARTBEAT_TIMEOUT) { log(t('log_heartbeat'), 'error'); stopServer(); break; }
                     const headerData = await usbDevice.transferIn(bulkInEndpointNumber, 16);
                     if (headerData.status !== 'ok') throw new Error('transferIn 失败');
                     lastCommandTime = performance.now();
@@ -571,12 +719,12 @@
                     await handleCommand(cmdType, cmdId, dataSize);
                 } catch (err) {
                     if (serverRunning) {
-                        log(`命令循环错误: ${err.message}`, 'error');
+                        log(t('log_loop_error', err.message), 'error');
                         stopServer();
                         if (err instanceof TransferTimeoutError) {
-                            log('USB 传输超时，无法恢复，正在断开设备…', 'warning');
+                            log(t('log_transfer_timeout'), 'warning');
                             await forceCloseDevice();
-                            updateConnectionStatus(false, '已断开（传输超时）');
+                            updateConnectionStatus(false, 'status_disconnected_timeout');
                         }
                     }
                     break;
@@ -593,7 +741,7 @@
             } else if (cmdId === CMD_ID_FILE_RANGE) {
                 await processFileRangeCommand(dataSize);
             } else {
-                log(`未知命令: cmd=${cmdId}, size=${dataSize}`, 'warning');
+                log(t('log_unknown_cmd', cmdId, dataSize), 'warning');
             }
         }
         async function processListCommand() {
@@ -675,7 +823,7 @@
                 // 检查是否整个文件完成
                 const covered = getCoveredBytes(name);
                 if (covered >= file.size) {
-                    log(`✅ 文件传输完成: ${name}`);
+                    log(t('log_complete', name));
                     progressFill.classList.add('complete');
                     // 完成状态将一直保持，不再回到滚动
                 } else {
@@ -683,7 +831,7 @@
                 }
 
             } catch (err) {
-                log(`传输错误: ${err.message}`, 'error');
+                log(t('log_transfer_error', err.message), 'error');
             } finally {
                 currentTransferInfo = null;
                 // 如果服务仍在运行，保留进度条显示当前文件覆盖，但隐藏逻辑由 stopServer 或下一个分片触发
@@ -752,18 +900,26 @@
         //  初始化
         // ============================================================
         function init() {
-            log('Switch DBI Backend WebUSB 工具 v9 已加载');
-            log('文件计量恢复，速率修正，无分片完成误报');
-            if (!('usb' in navigator)) { log('❌ 不支持 WebUSB', 'error'); btnConnect.disabled = true; return; }
+            try {
+                const saved = localStorage.getItem('dbi_lang');
+                if (saved === 'zh' || saved === 'en') currentLang = saved;
+                else if (navigator.language && navigator.language.toLowerCase().startsWith('zh')) currentLang = 'zh';
+                else currentLang = 'en';
+            } catch(e) {}
+            applyLang();
+            log(t('log_loaded'));
+            log(t('log_loaded_note'));
+            if (!('usb' in navigator)) { log(t('log_no_webusb'), 'error'); btnConnect.disabled = true; return; }
             navigator.usb.addEventListener('disconnect', handleUSBDisconnect);
             document.addEventListener('dragover', e => e.preventDefault());
             document.addEventListener('drop', e => e.preventDefault());
             updateFileListUI();
+            if (window.lucide) lucide.createIcons();
             showWindowsNotice();
         }
         document.addEventListener('DOMContentLoaded', init);
         window.addEventListener('beforeunload', e => {
-            if (serverRunning) { e.preventDefault(); e.returnValue = '服务运行中'; }
+            if (serverRunning) { e.preventDefault(); e.returnValue = t('server_running_beforeunload'); }
         });
 
         window.connectUSB = connectUSB;
@@ -773,6 +929,7 @@
         window.removeFile = removeFile;
         window.handleFileSelect = handleFileSelect;
         window.switchTab = switchTab;
+        window.toggleLang = toggleLang;
         window.dismissWindowsNotice = dismissWindowsNotice;
         window.openHelp = openHelp;
         window.closeHelp = closeHelp;

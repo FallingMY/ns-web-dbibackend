@@ -45,6 +45,8 @@ This is a pure frontend HTML tool that uses the WebUSB API in Chromium-based bro
   **Speed display**：Real-time transfer speed estimation
 - 🛡️ **超时保护**：内置心跳检测与 USB 读写超时  
   **Timeout protection**：Built-in heartbeat detection and USB read/write timeouts
+- 🌐 **中英双语**：右上角一键切换全部界面语言（含排查指南）  
+  **Bilingual UI**：One-click language switch (ZH/EN) in the top-right corner, including the troubleshooting guide
 
 ---
 
