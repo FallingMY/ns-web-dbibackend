@@ -38,6 +38,9 @@ Current version is **v9**: fixed file progress tracking, speed now uses a slidin
 这是一个纯前端的 HTML 工具，利用 Chromium 内核浏览器（Chrome / Edge）的 WebUSB API 直接与 Nintendo Switch 上的 DBI 插件通信，实现 NSP / XCI / NSZ 游戏文件的传输安装。  
 This is a pure frontend HTML tool that uses the WebUSB API in Chromium-based browsers (Chrome/Edge) to communicate directly with the DBI plugin on a Nintendo Switch for transferring and installing NSP/XCI/NSZ game files.
 
+这个工具主要是为了方便 **macOS 和 Linux** 用户使用而制作的——这两个系统无法（或不方便）通过 MTP 挂载 Switch，浏览器 + WebUSB 是最省事的传输方式。Windows 用户建议优先使用 DBI 的 MTP 连接模式（资源管理器直接拖放文件，无需安装驱动）。  
+This tool is primarily built for **macOS and Linux** users — these systems cannot (or cannot easily) mount the Switch via MTP, so a browser + WebUSB is the most convenient way to transfer. Windows users are recommended to use DBI's MTP mode instead (drag & drop in Explorer, no driver needed).
+
 ### 特性 / Features
 
 - 🚀 **纯浏览器运行**：无需安装 Python、Node.js 或其他依赖  
