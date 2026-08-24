@@ -77,10 +77,24 @@
         .progress-stats { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-secondary); margin-top: 6px; flex-wrap: wrap; gap: 4px; }
         .file-overall-progress { font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px; }
         .log-area { margin-top: 16px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; font-family: var(--font-mono); font-size: 0.75rem; max-height: 250px; overflow-y: auto; white-space: pre-wrap; }
+        .log-entry { padding: 1px 0; }
+        .log-entry.log-warning { color: var(--warning); }
+        .log-entry.log-error { color: var(--error); }
         .notice { padding: 10px 14px; border-radius: var(--radius); font-size: 0.8125rem; margin-bottom: 12px; display: flex; gap: 8px; border: 1px solid; }
         .notice-info { background: #1a2a3a; border-color: var(--accent); color: var(--accent); }
         .notice-warning { background: #2d2a1a; border-color: var(--warning); color: var(--warning); }
         .hidden { display: none !important; }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.65); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 16px; }
+        .modal { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius); max-width: 560px; width: 100%; padding: 24px; box-shadow: 0 8px 40px rgba(0,0,0,0.5); max-height: 90vh; overflow-y: auto; }
+        .modal h2 { font-size: 1.125rem; color: var(--warning); margin-bottom: 4px; }
+        .modal-sub { color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 16px; }
+        .modal p { font-size: 0.875rem; margin-bottom: 12px; }
+        .modal a { color: var(--accent); }
+        .modal-actions { display: flex; justify-content: flex-end; margin-top: 20px; }
+        .btn-help { border-radius: 50%; width: 34px; height: 34px; padding: 0; justify-content: center; flex-shrink: 0; }
+        .modal-help-body { max-height: 55vh; overflow-y: auto; padding-right: 8px; margin-top: 8px; }
+        .modal-help-body h3 { font-size: 1rem; color: var(--accent); margin: 16px 0 8px; }
+        .modal-help-body p { font-size: 0.8125rem; }
     </style>
 </head>
 <body>
@@ -92,6 +106,7 @@
             <span class="status-dot" id="statusDot"></span>
             <span class="status-text" id="statusText">未连接</span>
             <span style="flex:1;"></span>
+            <button class="btn btn-help" onclick="openHelp()" title="帮助 / Help" aria-label="帮助">?</button>
             <button class="btn btn-primary" id="btnConnect" onclick="connectUSB()">连接 Switch</button>
             <button class="btn" id="btnDisconnect" onclick="disconnectUSB()" disabled>断开</button>
             <button class="btn btn-success" id="btnStartServer" onclick="startServer()" disabled>▶ 启动服务</button>
@@ -134,6 +149,45 @@
                 <button class="btn" onclick="exportLog()">📥 导出日志</button>
             </div>
             <div class="log-area" id="logArea"></div>
+        </div>
+    </div>
+
+    <!-- Windows 驱动提示（仅 Windows 系统显示一次） -->
+    <div class="modal-overlay hidden" id="winNotice">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="winNoticeTitle">
+            <h2 id="winNoticeTitle">⚠️ 您正在使用 Windows 系统</h2>
+            <p class="modal-sub">You are using Windows</p>
+            <p>这可能导致您无法正常连接到您的 Switch。建议您直接使用 DBI 的 MTP 连接模式（无需安装驱动）。如果仍然需要使用本工具，请<a onclick="openHelp()" style="cursor:pointer;">查看 WinUSB 驱动安装</a>。</p>
+            <p style="color:var(--text-secondary);">This may prevent you from connecting to your Switch properly. We recommend using DBI's MTP connection mode instead (no driver required). If you still need this tool, please see the <a onclick="openHelp()" style="cursor:pointer;">WinUSB driver installation</a>.</p>
+            <p>⚠️ 安装 WinUSB 驱动后，DBI 的 MTP 模式将无法使用（同一设备同一时间只能绑定一种驱动）。如需恢复 MTP：设备管理器 → 更新驱动程序 → 浏览我的电脑 → 让我从列表中选取 → MTP USB Device。</p>
+            <p style="color:var(--text-secondary);">⚠️ After installing the WinUSB driver, DBI's MTP mode will stop working (only one driver can be bound to a device at a time). To restore MTP: Device Manager → Update driver → Browse my computer → Let me pick from a list → MTP USB Device.</p>
+            <div class="modal-actions">
+                <button class="btn btn-primary" onclick="dismissWindowsNotice()">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 帮助 / Troubleshooting 弹窗 -->
+    <div class="modal-overlay hidden" id="helpModal">
+        <div class="modal modal-help" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+            <h2 id="helpTitle">❓ 帮助 / Help</h2>
+            <p class="modal-sub">无法连接设备的排查指南 / Troubleshooting guide</p>
+            <div class="modal-help-body">
+                <h3>Windows：修改 USB 驱动</h3>
+                <p><b>1. 下载</b>：从 <a href="https://zadig.akeo.ie" target="_blank" rel="noopener">zadig.akeo.ie</a> 下载 Zadig 驱动安装工具。</p>
+                <p><b>2. 安装</b>：Switch 上启动 DBI「后端」模式并连接电脑 → 打开 Zadig → Options → List All Devices → 选择 Switch 设备（VID 057E / PID 3000）→ 目标驱动选 <b>WinUSB</b> → 点击 Install Driver → 重新插拔 USB。</p>
+                <p><b>3. 修改</b>：如果之前装过 libusbK 等其他驱动导致设备无法识别，重复第 2 步把驱动改为 WinUSB 即可（无需先卸载旧驱动）。</p>
+                <p><b>4. 还原</b>：安装 WinUSB 后 DBI 的 MTP 模式将不可用。恢复 MTP：设备管理器 → 右键 Switch 设备 → 更新驱动程序 → 浏览我的电脑 → 让我从列表中选取 → 选择 <b>MTP USB Device</b> → 安装。如需还原为 libusbK（供旧版 dbibackend 使用），用 Zadig 重复第 2 步并选择 libusbK 即可。</p>
+                <h3>常见问题 / FAQ</h3>
+                <p><b>选择设备时看不到 Switch</b>：Windows 下通常是驱动问题，见上方教程；macOS 下检查 USB 线是否支持数据传输、更换接口，并确认 DBI 已进入「后端」模式。</p>
+                <p><b>提示"不支持 WebUSB"</b>：页面必须通过 HTTPS 或 localhost 访问，直接打开本地文件（file://）或通过非 localhost 的 IP 访问无法使用 WebUSB。</p>
+                <p><b>传输中断后无法重新连接</b>：USB 传输超时后连接无法恢复，工具会自动断开并提示重新连接；如仍失败请刷新页面后重试。</p>
+                <p><b>资源管理器里看不到 MTP 设备</b>：设备的驱动被替换过（如安装了 WinUSB / libusbK），按上方「还原」步骤恢复 MTP 驱动。</p>
+                <p><b>提示"未找到 Bulk 端点"</b>：确认 Switch 上 DBI 处于「后端」模式且驱动正确，重新插拔 USB 后重试。</p>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-primary" onclick="closeHelp()">OK</button>
+            </div>
         </div>
     </div>
 
@@ -210,10 +264,12 @@
         function clearLog() { logArea.innerHTML = ''; }
         function exportLog() {
             const blob = new Blob([logArea.textContent], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
+            a.href = url;
             a.download = `dbi-log-${Date.now()}.txt`;
             a.click();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
         }
         function updateConnectionStatus(connected, message) {
             isConnected = connected;
@@ -238,6 +294,30 @@
         }
         function getFileExtension(n) { return n.toLowerCase().split('.').pop(); }
         function escapeHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+        function detectOS() {
+            const platform = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || '';
+            const ua = navigator.userAgent;
+            if (/^Win/i.test(platform) || /Windows NT/i.test(ua)) return 'windows';
+            if (/Mac/i.test(platform) || /Macintosh|Mac OS X/i.test(ua)) return 'macos';
+            if (/Linux/i.test(platform) || /Linux/i.test(ua)) return 'linux';
+            return 'unknown';
+        }
+        function showWindowsNotice() {
+            if (detectOS() !== 'windows') return;
+            try { if (localStorage.getItem('dbi_win_notice_dismissed')) return; } catch(e) {}
+            document.getElementById('winNotice').classList.remove('hidden');
+        }
+        function dismissWindowsNotice() {
+            document.getElementById('winNotice').classList.add('hidden');
+            try { localStorage.setItem('dbi_win_notice_dismissed', '1'); } catch(e) {}
+        }
+        function openHelp() {
+            document.getElementById('winNotice').classList.add('hidden');
+            document.getElementById('helpModal').classList.remove('hidden');
+        }
+        function closeHelp() {
+            document.getElementById('helpModal').classList.add('hidden');
+        }
         function switchTab(id) {
             document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === id));
             document.querySelectorAll('.tab-content').forEach(tc => tc.classList.toggle('active', tc.id === `tab-${id}`));
@@ -300,6 +380,7 @@
             fileOverallProgress.textContent = `已传输（去重）：${formatBytes(covered)} / ${formatBytes(file.size)}`;
             if (covered >= file.size) {
                 progressFill.classList.add('complete');
+                progressEta.textContent = '剩余: --';
             } else {
                 progressFill.classList.remove('complete');
             }
@@ -351,7 +432,7 @@
                 li.innerHTML = `
                     <span>${escapeHtml(name)}</span>
                     <span style="color:var(--text-secondary);font-size:0.75rem;">${formatBytes(file.size)}</span>
-                    <button class="btn btn-sm btn-danger" onclick="removeFile(${JSON.stringify(name)})">移除</button>
+                    <button class="btn btn-sm btn-danger" data-name="${escapeHtml(name)}" onclick="removeFile(this.dataset.name)">移除</button>
                 `;
                 fileListEl.appendChild(li);
             }
@@ -420,6 +501,7 @@
                 updateConnectionStatus(true, `已连接: ${device.productName || 'Switch'}`);
                 log('✅ USB 连接成功');
             } catch (err) {
+                if (err.name === 'NotFoundError') { log('已取消选择设备'); return; }
                 log(`连接失败: ${err.message}`, 'error');
                 updateConnectionStatus(false, '连接失败');
             }
@@ -436,15 +518,15 @@
                     }
                 }
             }
-            if (!out || !inp) return { out: { endpointNumber: 1 }, inp: { endpointNumber: 1 } };
+            if (!out || !inp) throw new Error(`未找到 Bulk 端点 (OUT=${!!out}, IN=${!!inp})`);
             return { out, inp };
         }
         function handleUSBDisconnect(event) {
-            if (usbDevice) { log('设备断开', 'error'); stopServer(); usbDevice = null; updateConnectionStatus(false, '设备已断开'); }
+            if (usbDevice) { log('设备断开', 'error'); stopServer(); usbDevice = null; bulkOutEndpointNumber = null; bulkInEndpointNumber = null; updateConnectionStatus(false, '设备已断开'); }
         }
         async function disconnectUSB() {
             if (serverRunning) { if (!confirm('服务运行中，断开？')) return; stopServer(); }
-            if (usbDevice) { try { await usbDevice.close(); } catch(e) {} usbDevice = null; }
+            await forceCloseDevice();
             updateConnectionStatus(false, '已断开');
         }
 
@@ -479,16 +561,24 @@
                     const headerData = await usbDevice.transferIn(bulkInEndpointNumber, 16);
                     if (headerData.status !== 'ok') throw new Error('transferIn 失败');
                     lastCommandTime = performance.now();
-                    const header = new Uint8Array(headerData.data.buffer);
+                    const header = new Uint8Array(headerData.data.buffer, headerData.data.byteOffset, headerData.data.byteLength);
                     if (header.length < 16) continue;
                     if (new TextDecoder('ascii').decode(header.slice(0,4)) !== 'DBI0') continue;
-                    const dv = new DataView(header.buffer);
+                    const dv = new DataView(header.buffer, header.byteOffset, header.byteLength);
                     const cmdType = dv.getUint32(4, true);
                     const cmdId = dv.getUint32(8, true);
                     const dataSize = dv.getUint32(12, true);
                     await handleCommand(cmdType, cmdId, dataSize);
                 } catch (err) {
-                    if (serverRunning) { log(`命令循环错误: ${err.message}`, 'error'); stopServer(); }
+                    if (serverRunning) {
+                        log(`命令循环错误: ${err.message}`, 'error');
+                        stopServer();
+                        if (err instanceof TransferTimeoutError) {
+                            log('USB 传输超时，无法恢复，正在断开设备…', 'warning');
+                            await forceCloseDevice();
+                            updateConnectionStatus(false, '已断开（传输超时）');
+                        }
+                    }
                     break;
                 }
             }
@@ -502,20 +592,22 @@
                 await processListCommand();
             } else if (cmdId === CMD_ID_FILE_RANGE) {
                 await processFileRangeCommand(dataSize);
+            } else {
+                log(`未知命令: cmd=${cmdId}, size=${dataSize}`, 'warning');
             }
         }
         async function processListCommand() {
             const names = Array.from(fileMap.keys()).join('\n');
             const bytes = new TextEncoder().encode(names);
             await sendResponse(CMD_TYPE_RESPONSE, CMD_ID_LIST, bytes.length);
-            try { await readAck(); } catch(e) { log(`ACK超时: ${e.message}`, 'warning'); }
+            await readAck();
             if (bytes.length > 0) await usbDevice.transferOut(bulkOutEndpointNumber, bytes);
         }
         async function processFileRangeCommand(dataSize) {
             await sendResponse(CMD_TYPE_ACK, CMD_ID_FILE_RANGE, dataSize);
             const rangeData = await readData(dataSize);
             if (rangeData.length < 16) return;
-            const dv = new DataView(rangeData.buffer);
+            const dv = new DataView(rangeData.buffer, rangeData.byteOffset, rangeData.byteLength);
             const rangeSize = dv.getUint32(0, true);
             const rangeOffset = Number(dv.getBigUint64(4, true));
             const nameLen = dv.getUint32(12, true);
@@ -524,7 +616,7 @@
             if (!file) { await sendResponse(CMD_TYPE_RESPONSE, CMD_ID_FILE_RANGE, 0); return; }
             if (rangeOffset + rangeSize > file.size) { await sendResponse(CMD_TYPE_RESPONSE, CMD_ID_FILE_RANGE, 0); return; }
             await sendResponse(CMD_TYPE_RESPONSE, CMD_ID_FILE_RANGE, rangeSize);
-            try { await readAck(); } catch(e) { log(`ACK超时: ${e.message}`, 'warning'); }
+            await readAck();
 
             // 只记录较大分片（≥1MB），但分片实际都是1MB，会记录许多，可调整为≥4MB，但这里不记录分片完成
             // 不再输出“传输块”日志，减少干扰
@@ -601,11 +693,24 @@
         // ============================================================
         //  USB 辅助
         // ============================================================
-        async function transferInWithTimeout(ep, len, timeout = TRANSFER_TIMEOUT) {
-            return await Promise.race([
-                usbDevice.transferIn(ep, len),
-                new Promise((_, rej) => setTimeout(() => rej(new Error('超时')), timeout))
-            ]);
+        class TransferTimeoutError extends Error {
+            constructor(message) { super(message); this.name = 'TransferTimeoutError'; }
+        }
+        function transferInWithTimeout(ep, len, timeout = TRANSFER_TIMEOUT) {
+            return new Promise((resolve, reject) => {
+                const timer = setTimeout(() => reject(new TransferTimeoutError('USB 传输超时')), timeout);
+                usbDevice.transferIn(ep, len).then(
+                    r => { clearTimeout(timer); resolve(r); },
+                    e => { clearTimeout(timer); reject(e); }
+                );
+            });
+        }
+        async function forceCloseDevice() {
+            if (!usbDevice) return;
+            try { await usbDevice.close(); } catch(e) {}
+            usbDevice = null;
+            bulkOutEndpointNumber = null;
+            bulkInEndpointNumber = null;
         }
         async function sendResponse(type, id, size) {
             const header = new Uint8Array(16);
@@ -619,7 +724,7 @@
         async function readAck() {
             const res = await transferInWithTimeout(bulkInEndpointNumber, 16);
             if (res.status !== 'ok') throw new Error('ACK读取失败');
-            return new Uint8Array(res.data.buffer);
+            return new Uint8Array(res.data.buffer, res.data.byteOffset, res.data.byteLength);
         }
         async function readData(size) {
             const chunks = [];
@@ -627,7 +732,7 @@
             while (total < size) {
                 const res = await transferInWithTimeout(bulkInEndpointNumber, size - total);
                 if (res.status !== 'ok') throw new Error('数据读取失败');
-                const data = new Uint8Array(res.data.buffer);
+                const data = new Uint8Array(res.data.buffer, res.data.byteOffset, res.data.byteLength);
                 if (data.length === 0) break;
                 chunks.push(data);
                 total += data.length;
@@ -654,6 +759,7 @@
             document.addEventListener('dragover', e => e.preventDefault());
             document.addEventListener('drop', e => e.preventDefault());
             updateFileListUI();
+            showWindowsNotice();
         }
         document.addEventListener('DOMContentLoaded', init);
         window.addEventListener('beforeunload', e => {
@@ -667,6 +773,9 @@
         window.removeFile = removeFile;
         window.handleFileSelect = handleFileSelect;
         window.switchTab = switchTab;
+        window.dismissWindowsNotice = dismissWindowsNotice;
+        window.openHelp = openHelp;
+        window.closeHelp = closeHelp;
         window.clearLog = clearLog;
         window.exportLog = exportLog;
     </script>

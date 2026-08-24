@@ -13,12 +13,15 @@
 **本代码由 DeepSeek 编写。** 目前功能大体可用，但存在许多小 bug，欢迎提交 Issue 和 Pull Request。  
 **This code was written by DeepSeek.** The core functionality is mostly working, but there are many small bugs. Issues and Pull Requests are welcome.
 
+当前为 **稳定版 v9**：修复文件计量、速率改用滑动窗口 + EMA 平滑、消除分片完成误报、USB 传输超时自动断开并提示重新连接。  
+Current version is **v9**: fixed file progress tracking, speed now uses a sliding window + EMA smoothing, removed false "chunk complete" reports, and USB timeouts now auto-disconnect with a reconnection prompt.
+
 | 项目 / Item                                  | 状态 / Status            |
 | -------------------------------------------- | ------------------------ |
 | 基本连接与传输 / Basic connection & transfer | ✅ 可用 / Working         |
-| 文件计量 / File progress tracking            | ⚠️ 有 bug / Buggy         |
-| 速率计算 / Speed calculation                 | ⚠️ 不精确 / Inaccurate    |
-| 错误处理 / Error handling                    | ⚠️ 不完善 / Incomplete    |
+| 文件计量 / File progress tracking            | ✅ 已修复 / Fixed (v9)    |
+| 速率计算 / Speed calculation                 | ✅ 基本可用 / Usable      |
+| 错误处理 / Error handling                    | ⚠️ 改进中 / Improving    |
 | 大文件稳定性 / Large file stability          | ⚠️ 需测试 / Needs testing |
 
 ---
@@ -91,3 +94,35 @@ python3 -m http.server 8080
 # Method 2: Node.js http-server
 npx http-server -p 8080
 # 然后访问 http://localhost:8080
+```
+
+---
+
+## 🔍 常见问题 / Troubleshooting
+
+**连接不到设备 / Cannot find the device**
+
+- 确认 Switch 上 DBI 已启动并处于「后端」(Backend) 模式
+- 确认使用支持数据传输的 USB 线（非仅充电线），尝试换一个 USB 口
+- 关闭占用 USB 的软件（如系统文件管理器对 Switch 的 MTP 弹窗）
+- 页面必须通过 HTTPS 或 localhost 访问，`file://` 协议下 WebUSB 不可用
+
+**传输中断后无法重新连接 / Cannot reconnect after a transfer failure**
+
+USB 传输超时后设备连接无法恢复，工具会自动断开并提示重新连接；如仍失败请刷新页面后重试。
+
+**Windows 下无法识别设备 / Device not detected on Windows**
+
+WebUSB 在 Windows 上要求设备接口绑定 **WinUSB** 驱动，而 DBI 官方教程为 Windows 推荐安装的是 **libusbK** 驱动（供 dbibackend.exe 使用）。libusbK 驱动下浏览器无法访问设备，选择弹窗中不会出现 Switch。macOS / Linux 无此驱动要求，可直接使用。
+
+修复：用 [Zadig](https://zadig.akeo.ie) 将 Switch 设备的驱动替换为 **WinUSB**（Options → List All Devices → 选择 Switch / DBI 设备（VID 057E / PID 3000）→ 目标驱动选 WinUSB → Install），然后重新插拔 USB。替换后 dbibackend.exe 依然可用（libusb 支持 WinUSB）。
+
+**Windows 下 WebUSB 无响应 / WebUSB not responding on Windows**
+
+检查设备管理器中 Switch 的驱动，若被识别为 MTP 设备，需先在系统设置中禁用 MTP 自动挂载（或在 DBI 端重新插拔）。
+
+---
+
+## 📜 许可 / License
+
+[MIT](LICENSE)
